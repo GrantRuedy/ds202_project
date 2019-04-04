@@ -12,6 +12,9 @@ knitr::opts_chunk$set(echo = TRUE)
 #Team Members
 Grant Ruedy, Andrew Sundberg
 
+#Project Coordinator
+Grant Ruedy
+
 #Data set
 Link to data set:    https://www.kaggle.com/drgilermo/nba-players-stats#Seasons_Stats.csv
 
