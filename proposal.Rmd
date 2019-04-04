@@ -1,0 +1,22 @@
+---
+title: "Proposal"
+author: "Grant Ruedy"
+date: "4/3/2019"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+#Team Members
+Grant Ruedy, Andrew Sundberg
+
+#Data set
+Link to data set:    https://www.kaggle.com/drgilermo/nba-players-stats#Seasons_Stats.csv
+
+#Overview
+This data set is from kaggle. It has basketball statisitics for NBA players for 67 seasons. These statisitics include typical box-score attributes as well as some more complicated statistics for all the players.
+
+#Exploratory Analysis
+From this data set, we hope to answer what atttributes are most important for winning teams. Also look at if there is any relationship between certain statisitcs and how successful the team/player is. Also look at what attributes are correlated or which ones do not have any realtionship with other attributes.
