@@ -1,0 +1,151 @@
+---
+title: "Final Project Report"
+author: "Grant Ruedy & Andrew Sundberg"
+date: "5/4/2019"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r, echo=FALSE, results='hide', include=FALSE}
+nba <- read.csv('/Users/grantruedy/ds202_project/Seasons_Stats.csv', header = T, stringsAsFactors = F)
+library(tidyverse)
+nba2017 <- filter(nba, Year >= 2017)
+nba2017_recent <- filter(nba2017,
+  !Tm %in% c('TOT', 'CHA', 'CHH', 'NJN', 'NOH', 'NOK','SEA','VAN'))
+wins <- read.csv('/Users/grantruedy/ds202_project/Wins.csv', header = T, stringsAsFactors = F)
+nba.clean <- inner_join(nba2017_recent, wins, by='Tm')
+nba.clean1 <-nba.clean %>% group_by(Tm) %>% mutate(team.pts = sum((PTS)))
+```
+
+
+###Background
+
+Both of us are sports fans, and more specifically NBA fans. We thought it would be fun to base our project around a topic we were already familiar with to make the data exploration more meaningful and interesting. The NBA is the highest level of basketball in the world, so we figured there would be plenty of data available regarding player and team statistics. The data set we used contained measureable basketball statistics, like points, rebounds, blocks, steals, turnovers, etc. for NBA players from 1950 to 2017. This data set had over 25,000 observations, for 53 different variables. 
+
+###Questions Raised
+
+There were many things we were curious about that could hopefully be answered from our data set. The first question we asked was what makes a winning team? Obviously there are many different parts to the game of basketball, but we wanted to know what parts were morst important for helping a team win. If a certain aspect of the game (such as assists or steals for example) is proven to be statisically beneficial in determining a team's record, then players would want to make sure they focus their time practicing those important parts of the game. We wanted to compare these different basketball statistics between good and bad teams (based off their record), and see if there were any trends or patterns.
+
+The next question we had was what position is most important? Basketball is made up of 5 different positions: center, power forward, point guard, small forward, and shooting guard. We were curious to see which positions were most beneficial in determining a team's wins. 
+
+The final question we had from our data set was is it better to have younger or older players? Teams should want to make sure they are signing players who are at the age that is proven to be most productive for helping the team win. We wanted to look at the basketball stats among different aged players, and see if there were any trends or differences.
+
+###Obtaining the Dataset
+
+We obtained the data from Kaggle. The person whose account it was on said he scraped it from basketball reference, which is a website that has data for all basketball related statisitcs dating back to when game stats were first measured, which was about 1950. We also used basketball reference to select each team's win total for the 2017 season. This was done by copying and pasting into a csv file, creating a data frame with 32 obseravtions representing each team, and the wins for every team. All of our data used in this project was fairly easy to obtain, allowing the data exploration to start earlier.
+
+###Cleaning the Dataset
+
+The data set we worked with was already pretty clean to start with. However, there were several columns with empty data as well as some columns that were repeated. To fix this, we simply subsetted the data set by taking away such columns. We then cleaned the data by subsetting it to where the year was equal to 2017. This would make it so we could analyze a lot deeper into one season, instead of having to deal with 60+ seasons. Once we subsetted by year, we had to remove obseravtions where the team was outdated. There were 8 teams that were no longer in the NBA in 2017, that must have been there years before. Also, we had to figure out how to combine the original data set with our data set of teams and wins. To do this, we used an inner join, by the team name.  All of these steps are shown below.
+
+```{r, eval=FALSE}
+nba2017 <- filter(nba, Year >= 2017)
+nba2017_recent <- filter(nba2017, !Tm %in% c('TOT', 'CHA', 'CHH', 'NJN', 'NOH', 'NOK','SEA','VAN'))
+nba.clean <- inner_join(nba2017_recent, wins, by='Tm')
+```
+
+
+###Exploratory Analysis
+
+For our explaratory analysis, we wanted to get a good understanding of what variables had any correlations with the wins variable, which is what we were really interested in. We used the correlation function in r to show us these values, which is shown below.
+```{r, eval=FALSE}
+cor(nba.clean1$Wins, nba.clean)
+```
+
+The only variable that had any strong correaltion with wins was points scored, which had a correlation of .62. This made a lot of sense, as scoring as many points as possible will improve your chances of outscoring your opponent. We also wanted to get a good understanding of how all the teams in 2017 performed. To do this, we made a simple scatterplot showing wins for each team. The line represents teams that made the playoffs. Teams only needed to win 46/82  or ~ 56% of their games to make the playoffs. This seemed kind of low and surprised us.   The graph is shown below.
+
+```{r, echo=FALSE}
+ggplot(nba.clean1, aes(x=Tm, y=Wins)) + geom_point() + coord_flip() + geom_hline(yintercept = 46)
+```
+
+
+###Data Wrangling and Visualization
+
+There were a lot of steps we had to take to work with our data in a way that would allow for easier analysis. The first thing we decided to do was create two seperate data sets, for the best and worst teams. This would allow us later to compare different statistics between these two data sets, and see what good teams do differently than bad teams. We also made it so the 'games started' statistic was greater than 25, so there weren't any outliers in the data set from players who only played a few games. These steps are shown below.
+```{r}
+nba.clean.best <- filter(nba.clean1, Tm =='GSW' | Tm =='HOU' | Tm == 'TOR' & GS > 25)
+nba.clean.worst <- filter(nba.clean1, Tm =='PHO' | Tm =='MEM' | Tm == 'DAL' & GS > 25)
+```
+
+Next, we wanted to make team stats based on averaging the stats for each player on that team. To do this, we used dplyr to group by the team, then add a column based off the average for that statistic. We did this for the two data sets containing the worst and best teams. Below is an example of what we did, not incuding every variable we used to avoid redundancy. Here, TmAST corresponds to the average amount of assists performed by players on that particular team. The same goes for steals (STL).
+```{r, eval=FALSE}
+nba.clean.best1 <- nba.clean.best1 %>% group_by(Tm) %>% mutate(TmAST. = mean(AST.))
+nba.clean.best1 <- nba.clean.best1 %>% group_by(Tm) %>% mutate(TmSTL. = mean(STL.))
+
+nba.clean.worst1 <- nba.clean.worst1 %>% group_by(Tm) %>% mutate(TmAST. = mean(AST.))
+nba.clean.worst1 <- nba.clean.worst1 %>% group_by(Tm) %>% mutate(TmSTL. = mean(STL.))
+```
+
+We then wanted to visualize team points among the best and worst teams. To do this, we graphed the points scored by each player, between the best 3 teams and worst 3 teams. Since points had the strongest correlation to wins, we figured this variable would provide the most interesting results. the colored lines represent the average points for that particular team. The visualizations of points per player is shown below, one graph for the best teams and one graph for the worst teams.
+```{r, echo=FALSE}
+par(mfrow = c(2, 1))
+
+ggplot(nba.clean.best, aes(x=Player, y=PTS, group_by(Tm))) + geom_point(aes(color =Tm))  + 
+   theme(axis.text.x = element_text(angle = 90, hjust = 1)) +
+  geom_hline(yintercept = mean(nba.clean.best$PTS[nba.clean.best$Tm=='TOR']), col='red') +
+  geom_hline(yintercept = mean(nba.clean.best$PTS[nba.clean.best$Tm=='HOU']), col='green') + 
+  geom_hline(yintercept = mean(nba.clean.best$PTS[nba.clean.best$Tm=='GSW']), col='blue') +
+  ggtitle('Best Teams Points by Player')
+
+ggplot(nba.clean.worst, aes(x=Player, y=PTS, group_by(Tm))) + geom_point(aes(color =Tm))  + 
+   theme(axis.text.x = element_text(angle = 90, hjust = 1)) + 
+  geom_hline(yintercept = mean(nba.clean.worst$PTS[nba.clean.worst$Tm=='DAL']), col='red') +
+  geom_hline(yintercept = mean(nba.clean.worst$PTS[nba.clean.worst$Tm=='MEM']), col='green') + 
+  geom_hline(yintercept = mean(nba.clean.worst$PTS[nba.clean.worst$Tm=='PHO']), col='blue')+
+  ggtitle('Worst Teams Points by Player')
+```
+
+
+It is clear from the graphs that the good teams score substantially more points than the bad teams. Plus,the Golden State Warriors, who won 3 out of the last 4 championships, have 3 players over 1500 points. This is more than any other team, explaining why they are so dominant.
+
+Next, we wanted to go beyond visualizations and correlations to see what makes good teams good. To do this, we fit a regression model including most of the basic 'box-score' type of varibles as well as some more complicated ones as our predictors, for predicting wins. This would allow us to see what varibles are significant in our model, and hence important for determining a teams wins and whether they are a good team or not. We used basic stepwise selection as well as some more complicated diagnostics to choose the best model. The results from the stepwise selection are shown below, as they are the same as our more complication methods.
+```{r}
+m1 <-glm(Wins~ eFG. + AST + TRB + STL + BLK + FT + team.pts, data=nba.clean1)
+search1<- step(m1, trace = F)
+coef(search1)
+```
+
+Effective field goal percentage (eFG) is the field goal percentage that takes into account that 3 pointers are harder to make than 2 pointers. Team points is the amount of points that team has scored during the season.
+
+After this we wanted to explore what postions are most important. We wanted to visualize the distribution of points scored by different positons, compared by the three best and worst teams. We created a box plot to show this, as shown below.
+```{r, echo=FALSE}
+ggplot(nba.clean.best, aes(x=Pos, y=PTS,fill=Tm)) + geom_boxplot() + ggtitle('Best Teams')
+ggplot(nba.clean.worst, aes(x=Pos, y=PTS,fill=Tm)) + geom_boxplot() + ggtitle('Worst Teams')
+```
+
+The last thing we wanted to visualize was the distribution of points by age, to see if teams should sign young or old players. We just made a simple boxplot to show the distribution of points scored. We used points scored as our criteria to judge how productive a player is because that had the highest correlation with wins, and it was significant in our model. This graph is shown below.
+```{r, echo=FALSE}
+ggplot(nba.clean, aes(x=factor(Age), y=PTS)) + geom_boxplot() + ggtitle('Points by Age')
+```
+
+
+###Answers to Questions Raised
+
+Our first question we were looking to answer was what makes a winning team? We wanted to find out what statistics a player had would contribute to wins the most. To answer our original question, the statistics that make a winning team are the total team points scored in a season and their effective field goal percentage. This means teams must be scoring at a high and efficient rate in order to win games and they do not have to be the most flashy to be efficient. It does not matter how well a team passes, blocks, steals etc., as long as they find out how to score. These results come from our model, as eFG (effective field goal %) and team points were the only variables selected to be significant. However, the adjusted r squared of our model is relatively low with .38. This makes sense because our model only has two predictors, and could potentially underfit the data.
+
+The second question we addressed was, what position is the most important? In order to answer this we compared the top three teams against the bottom three teams against each other in visuals. These visuals compared the effective field goal percentage and points among the positions within the bad or good team data set. We found that the effective field goal percentage was not very important for explaining which position tended to lead each team. When we looked at the graphs comparing points scored, we saw a huge difference in which positions were the scoring leaders on the good teams opposed to the bad teams. The good teams were shown to have higher point totals for the point guard, shooting guard, and small forward positions, whereas the bad teams' leading scorers were the centers and power forwards. Since the point guards, shooting guards, and small forwards are traditionally quicker players that are more capable of shooting three-pointers at an efficient rate, this makes sense that they are scoring more points.
+
+The final question we answered was, is it better to have older or younger players? Right off the bat we made a box plot of all the players of their point totals and grouped by their ages. From this boxplot we found that the ceiling for players in the age range 23 through 28 was higher. We called this age range the player's "prime", or when they have their most productive years of their career. Then we compared the points scored by players on the good teams by age with the players on the bad teams by age. We found that the good teams' leading scorer was either 27 or 28, whereas the bad teams' leading scorer was either younger or older than the "prime" age range. Therefore our answer to the question is, that the team should be comprised of players mainly in the 23 through 28 age range with a super-star who can lead the team that is near the end of his prime. Players that are younger are more valuable to a team than those who are older, as they have more potential to develop as their career progresses.
+
+
+###Conclusion
+
+In conclusion, we really liked working on this data set, because we are such avid NBA fans. Since the data set was so large, there was so much we could've potentially found. In the end, we just used the most recent season's data to see how basketball is being played currently. This allowed us to analyze trends in good and bad teams, without time being a factor. It also made our modeling process a lot easier. This data set was very simple to obtain from Kaggle and we had an easy time joining the win totals for each team with the big data set. The findings in all of our questions proved why the Warriors are so good and have won three of the last four championships. They focus on scoring points at a very high and efficient rate, by shooting three-pointers very well. Their top three players are either a point guard, shooting guard, or small forward, which are the positions that were proven to be the most important. Finally, they have two super-star leaders that are both 28 years old. If teams want to seriously compete for championships, they need to sign at least one excellent shooter in their prime, which is easier said than done.
+
+####Grant Ruedy's Contribution
+For this project, I helped find the data set that we would be working with from Kaggle. Then I joined that data set with our own taken from basketball reference. I did a lot of the cleaning in terms of subsetting the data and adding team statistics. I also did the modeling in trying to select which variables were important for determining wins, and a lot of the visualization for points by age and position. For the presentation, I made the slides regarding the cleaning, joining, modeling, and some other miscelaneuous slides. We then compiled them and each shared the load of presenting. For the report, I did the fist several questions, Andrew did the last 2.
+
+
+####Andrew Sundberg's Contribution
+I made the visuals and slides regarding the second and third questions we were trying to answer. These were the questions regarding which position was the most important and if younger or older players are better. I used Grant's data sets for the best and worst teams in the visuals for the position and age boxplots. We compiled our slides together to make sure we weren't redundant. We then ran through the presentation four times the night before our presentation to get a good feel for the content and how long the presentation would take.
+
+
+
+#####Sources
+“2017-18 NBA Season Summary.” Basketball,  
+www.basketball-reference.com/leagues/NBA_2018.html.
+
+Goldstein, Omri. “NBA Players Stats since 1950.” Kaggle, 27 Apr. 2018,  www.kaggle.com/drgilermo/nba-players-stats#Seasons_Stats.csv.
